@@ -12,6 +12,8 @@
 #include "libANGLE/histogram_macros.h"
 #include "third_party/trace_event/trace_event.h"
 
+#define ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES {"d3dcompiler_47.dll", "d3dcompiler_46.dll", "d3dcompiler_43.dll"}
+
 #if ANGLE_APPEND_ASSEMBLY_TO_SHADER_DEBUG_INFO == ANGLE_ENABLED
 namespace
 {
@@ -117,6 +119,7 @@ gl::Error HLSLCompiler::initialize()
 #if !defined(ANGLE_ENABLE_WINDOWS_STORE)
 #if defined(ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES)
     // Find a D3DCompiler module that had already been loaded based on a predefined list of versions.
+
     static const char *d3dCompilerNames[] = ANGLE_PRELOADED_D3DCOMPILER_MODULE_NAMES;
 
     for (size_t i = 0; i < ArraySize(d3dCompilerNames); ++i)
