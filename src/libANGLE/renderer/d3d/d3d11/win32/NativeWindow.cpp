@@ -69,6 +69,7 @@ HRESULT NativeWindow::createSwapChain(ID3D11Device* device, DXGIFactory* factory
         HRESULT result = factory2->CreateSwapChainForHwnd(device, mWindow, &swapChainDesc, nullptr, nullptr, &swapChain1);
         if (SUCCEEDED(result))
         {
+            factory->MakeWindowAssociation(mWindow, DXGI_MWA_NO_ALT_ENTER);
             *swapChain = static_cast<DXGISwapChain*>(swapChain1);
         }
         SafeRelease(factory2);
