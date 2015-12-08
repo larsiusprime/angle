@@ -209,6 +209,16 @@ void GetUniformBlockInfo(const std::vector<VarT> &fields,
 }
 
 template <typename T>
+static inline void SetIfDirty(T *dest, const T &source, bool *dirtyFlag)
+{
+    ASSERT(dest != NULL);
+    ASSERT(dirtyFlag != NULL);
+
+    *dirtyFlag = *dirtyFlag || (memcmp(dest, &source, sizeof(T)) != 0);
+    *dest      = source;
+}
+
+template <typename T>
 bool TransposeMatrix(T *target,
                      const GLfloat *value,
                      int targetWidth,
@@ -1094,6 +1104,10 @@ gl::Error ProgramD3D::save(gl::BinaryOutputStream *stream)
     return gl::Error(GL_NO_ERROR);
 }
 
+void ProgramD3D::setBinaryRetrievableHint(bool /* retrievable */)
+{
+}
+
 gl::Error ProgramD3D::getPixelExecutableForFramebuffer(const gl::Framebuffer *fbo,
                                                        ShaderExecutableD3D **outExecutable)
 {
@@ -1908,16 +1922,6 @@ void ProgramD3D::defineUniform(GLenum shaderType,
             encoder->exitAggregateType();
         }
     }
-}
-
-template <typename T>
-static inline void SetIfDirty(T *dest, const T &source, bool *dirtyFlag)
-{
-    ASSERT(dest != NULL);
-    ASSERT(dirtyFlag != NULL);
-
-    *dirtyFlag = *dirtyFlag || (memcmp(dest, &source, sizeof(T)) != 0);
-    *dest      = source;
 }
 
 template <typename T>

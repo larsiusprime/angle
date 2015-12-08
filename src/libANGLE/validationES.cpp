@@ -2191,9 +2191,7 @@ bool ValidateEGLImageTargetRenderbufferStorageOES(Context *context,
 
 bool ValidateBindVertexArrayBase(Context *context, GLuint array)
 {
-    VertexArray *vao = context->getVertexArray(array);
-
-    if (!vao)
+    if (!context->isVertexArrayGenerated(array))
     {
         // The default VAO should always exist
         ASSERT(array != 0);
@@ -2220,6 +2218,51 @@ bool ValidateGenVertexArraysBase(Context *context, GLsizei n)
     if (n < 0)
     {
         context->recordError(Error(GL_INVALID_VALUE));
+        return false;
+    }
+
+    return true;
+}
+
+bool ValidateProgramBinaryBase(Context *context,
+                               GLuint program,
+                               GLenum binaryFormat,
+                               const void *binary,
+                               GLint length)
+{
+    Program *programObject = GetValidProgram(context, program);
+    if (programObject == nullptr)
+    {
+        return false;
+    }
+
+    const std::vector<GLenum> &programBinaryFormats = context->getCaps().programBinaryFormats;
+    if (std::find(programBinaryFormats.begin(), programBinaryFormats.end(), binaryFormat) ==
+        programBinaryFormats.end())
+    {
+        context->recordError(Error(GL_INVALID_ENUM, "Program binary format is not valid."));
+        return false;
+    }
+
+    return true;
+}
+
+bool ValidateGetProgramBinaryBase(Context *context,
+                                  GLuint program,
+                                  GLsizei bufSize,
+                                  GLsizei *length,
+                                  GLenum *binaryFormat,
+                                  void *binary)
+{
+    Program *programObject = GetValidProgram(context, program);
+    if (programObject == nullptr)
+    {
+        return false;
+    }
+
+    if (!programObject->isLinked())
+    {
+        context->recordError(Error(GL_INVALID_OPERATION, "Program is not linked."));
         return false;
     }
 

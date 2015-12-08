@@ -45,8 +45,7 @@ RendererD3D::RendererD3D(egl::Display *display)
       mDeviceLost(false),
       mAnnotator(nullptr),
       mScratchMemoryBufferResetCounter(0),
-      mWorkaroundsInitialized(false),
-      mEGLDevice(nullptr)
+      mWorkaroundsInitialized(false)
 {
 }
 
@@ -57,8 +56,6 @@ RendererD3D::~RendererD3D()
 
 void RendererD3D::cleanup()
 {
-    SafeDelete(mEGLDevice);
-
     mScratchMemoryBuffer.resize(0);
     for (auto &incompleteTexture : mIncompleteTextures)
     {
@@ -361,7 +358,7 @@ gl::Error RendererD3D::applyRenderTarget(const gl::Data &data, GLenum drawMode, 
 
     float nearZ = data.state->getNearPlane();
     float farZ = data.state->getFarPlane();
-    setViewport(data.state->getViewport(), nearZ, farZ, drawMode,
+    setViewport(data.caps, data.state->getViewport(), nearZ, farZ, drawMode,
                 data.state->getRasterizerState().frontFace, ignoreViewport);
 
     setScissorRectangle(data.state->getScissor(), data.state->isScissorTestEnabled());
@@ -422,8 +419,7 @@ gl::Error RendererD3D::applyState(const gl::Data &data, GLenum drawMode)
         return error;
     }
 
-    error = setDepthStencilState(data.state->getDepthStencilState(), data.state->getStencilRef(),
-                                 data.state->getStencilBackRef(), rasterizer.frontFace == GL_CCW);
+    error = setDepthStencilState(*data.state);
     if (error.isError())
     {
         return error;
@@ -736,18 +732,5 @@ gl::DebugAnnotator *RendererD3D::getAnnotator()
 {
     ASSERT(mAnnotator);
     return mAnnotator;
-}
-
-egl::Error RendererD3D::getEGLDevice(DeviceImpl **device)
-{
-    egl::Error error = initializeEGLDevice(&mEGLDevice);
-    if (error.isError())
-    {
-        return error;
-    }
-
-    *device = static_cast<DeviceImpl *>(mEGLDevice);
-
-    return egl::Error(EGL_SUCCESS);
 }
 }

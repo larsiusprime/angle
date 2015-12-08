@@ -1286,6 +1286,9 @@ void State::getBooleanv(GLenum pname, GLboolean *params)
       case GL_PRIMITIVE_RESTART_FIXED_INDEX:
           *params = mPrimitiveRestart;
           break;
+      case GL_RASTERIZER_DISCARD:
+          *params = isRasterizerDiscardEnabled() ? GL_TRUE : GL_FALSE;
+          break;
       default:
         UNREACHABLE();
         break;
@@ -1526,7 +1529,7 @@ void State::getIntegerv(const gl::Data &data, GLenum pname, GLint *params)
         *params = mGenericUniformBuffer.id();
         break;
       case GL_TRANSFORM_FEEDBACK_BINDING:
-        *params = mTransformFeedback->id();
+          *params = mTransformFeedback.id();
         break;
       case GL_TRANSFORM_FEEDBACK_BUFFER_BINDING:
         *params = mTransformFeedback->getGenericBuffer().id();

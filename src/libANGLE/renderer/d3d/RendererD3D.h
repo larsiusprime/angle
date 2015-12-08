@@ -159,11 +159,15 @@ class RendererD3D : public Renderer, public BufferFactoryD3D
                                     const gl::ColorF &blendColor,
                                     unsigned int sampleMask) = 0;
 
-    virtual gl::Error setDepthStencilState(const gl::DepthStencilState &depthStencilState, int stencilRef,
-                                           int stencilBackRef, bool frontFaceCCW) = 0;
+    virtual gl::Error setDepthStencilState(const gl::State &glState) = 0;
 
     virtual void setScissorRectangle(const gl::Rectangle &scissor, bool enabled) = 0;
-    virtual void setViewport(const gl::Rectangle &viewport, float zNear, float zFar, GLenum drawMode, GLenum frontFace,
+    virtual void setViewport(const gl::Caps *caps,
+                             const gl::Rectangle &viewport,
+                             float zNear,
+                             float zFar,
+                             GLenum drawMode,
+                             GLenum frontFace,
                              bool ignoreViewport) = 0;
 
     virtual gl::Error applyRenderTarget(const gl::Framebuffer *frameBuffer) = 0;
@@ -255,7 +259,7 @@ class RendererD3D : public Renderer, public BufferFactoryD3D
     // In D3D11, faster than calling setTexture a jillion times
     virtual gl::Error clearTextures(gl::SamplerType samplerType, size_t rangeStart, size_t rangeEnd) = 0;
 
-    egl::Error getEGLDevice(DeviceImpl **device);
+    virtual egl::Error getEGLDevice(DeviceImpl **device) = 0;
 
   protected:
     virtual bool getLUID(LUID *adapterLuid) const = 0;
@@ -264,8 +268,6 @@ class RendererD3D : public Renderer, public BufferFactoryD3D
     void cleanup();
 
     virtual void createAnnotator() = 0;
-
-    virtual egl::Error initializeEGLDevice(DeviceD3D **outDevice) = 0;
 
     // dirtyPointer is a special value that will make the comparison with any valid pointer fail and force the renderer to re-apply the state.
     static const uintptr_t DirtyPointer;
@@ -334,8 +336,6 @@ class RendererD3D : public Renderer, public BufferFactoryD3D
 
     mutable bool mWorkaroundsInitialized;
     mutable WorkaroundsD3D mWorkarounds;
-
-    DeviceD3D *mEGLDevice;
 };
 
 struct dx_VertexConstants

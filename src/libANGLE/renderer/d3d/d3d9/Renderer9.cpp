@@ -132,6 +132,8 @@ Renderer9::Renderer9(egl::Display *display)
     mAppliedProgramSerial = 0;
 
     initializeDebugAnnotator();
+
+    mEGLDevice = nullptr;
 }
 
 Renderer9::~Renderer9()
@@ -154,6 +156,7 @@ void Renderer9::release()
 
     releaseDeviceResources();
 
+    SafeDelete(mEGLDevice);
     SafeRelease(mDevice);
     SafeRelease(mDeviceEx);
     SafeRelease(mD3d9);
@@ -1031,9 +1034,13 @@ gl::Error Renderer9::setBlendState(const gl::Framebuffer *framebuffer,
     return gl::Error(GL_NO_ERROR);
 }
 
-gl::Error Renderer9::setDepthStencilState(const gl::DepthStencilState &depthStencilState, int stencilRef,
-                                          int stencilBackRef, bool frontFaceCCW)
+gl::Error Renderer9::setDepthStencilState(const gl::State &glState)
 {
+    const auto &depthStencilState = glState.getDepthStencilState();
+    int stencilRef                = glState.getStencilRef();
+    int stencilBackRef            = glState.getStencilBackRef();
+    bool frontFaceCCW             = (glState.getRasterizerState().frontFace == GL_CCW);
+
     bool depthStencilStateChanged = mForceSetDepthStencilState ||
                                     memcmp(&depthStencilState, &mCurDepthStencilState, sizeof(gl::DepthStencilState)) != 0;
     bool stencilRefChanged = mForceSetDepthStencilState || stencilRef != mCurStencilRef ||
@@ -1154,7 +1161,12 @@ void Renderer9::setScissorRectangle(const gl::Rectangle &scissor, bool enabled)
     mForceSetScissor = false;
 }
 
-void Renderer9::setViewport(const gl::Rectangle &viewport, float zNear, float zFar, GLenum drawMode, GLenum frontFace,
+void Renderer9::setViewport(const gl::Caps *caps,
+                            const gl::Rectangle &viewport,
+                            float zNear,
+                            float zFar,
+                            GLenum drawMode,
+                            GLenum frontFace,
                             bool ignoreViewport)
 {
     gl::Rectangle actualViewport = viewport;
@@ -3057,14 +3069,23 @@ gl::Error Renderer9::clearTextures(gl::SamplerType samplerType, size_t rangeStar
     return gl::Error(GL_NO_ERROR);
 }
 
-egl::Error Renderer9::initializeEGLDevice(DeviceD3D **outDevice)
+egl::Error Renderer9::getEGLDevice(DeviceImpl **device)
 {
-    if (*outDevice == nullptr)
+    if (mEGLDevice == nullptr)
     {
         ASSERT(mDevice != nullptr);
-        *outDevice = new DeviceD3D(reinterpret_cast<void *>(mDevice), EGL_D3D9_DEVICE_ANGLE);
+        mEGLDevice       = new DeviceD3D();
+        egl::Error error = mEGLDevice->initialize(reinterpret_cast<void *>(mDevice),
+                                                  EGL_D3D9_DEVICE_ANGLE, EGL_FALSE);
+
+        if (error.isError())
+        {
+            SafeDelete(mEGLDevice);
+            return error;
+        }
     }
 
+    *device = static_cast<DeviceImpl *>(mEGLDevice);
     return egl::Error(EGL_SUCCESS);
 }
 

@@ -325,6 +325,11 @@ size_t Framebuffer::getNumColorBuffers() const
     return mData.mColorAttachments.size();
 }
 
+bool Framebuffer::hasDepth() const
+{
+    return (mData.mDepthAttachment.isAttached() && mData.mDepthAttachment.getDepthSize() > 0);
+}
+
 bool Framebuffer::hasStencil() const
 {
     return (mData.mStencilAttachment.isAttached() && mData.mStencilAttachment.getStencilSize() > 0);
@@ -373,7 +378,7 @@ GLenum Framebuffer::checkStatus(const gl::Data &data) const
             {
                 if (!formatCaps.renderable)
                 {
-                    return GL_FRAMEBUFFER_UNSUPPORTED;
+                    return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
                 }
 
                 if (formatInfo.depthBits > 0 || formatInfo.stencilBits > 0)
@@ -444,7 +449,7 @@ GLenum Framebuffer::checkStatus(const gl::Data &data) const
 
             if (!formatCaps.renderable)
             {
-                return GL_FRAMEBUFFER_UNSUPPORTED;
+                return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
             }
 
             if (formatInfo.depthBits == 0)
@@ -494,7 +499,7 @@ GLenum Framebuffer::checkStatus(const gl::Data &data) const
 
             if (!formatCaps.renderable)
             {
-                return GL_FRAMEBUFFER_UNSUPPORTED;
+                return GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT;
             }
 
             if (formatInfo.stencilBits == 0)
@@ -559,6 +564,11 @@ Error Framebuffer::invalidateSub(size_t count, const GLenum *attachments, const 
 
 Error Framebuffer::clear(Context *context, GLbitfield mask)
 {
+    if (context->getState().isRasterizerDiscardEnabled())
+    {
+        return gl::Error(GL_NO_ERROR);
+    }
+
     // Sync the clear state
     context->syncRendererState(context->getState().clearStateBitMask());
 
@@ -570,10 +580,14 @@ Error Framebuffer::clearBufferfv(Context *context,
                                  GLint drawbuffer,
                                  const GLfloat *values)
 {
+    if (context->getState().isRasterizerDiscardEnabled())
+    {
+        return gl::Error(GL_NO_ERROR);
+    }
+
     // Sync the clear state
     context->syncRendererState(context->getState().clearStateBitMask());
-
-    return mImpl->clearBufferfv(context->getState(), buffer, drawbuffer, values);
+    return mImpl->clearBufferfv(context->getData(), buffer, drawbuffer, values);
 }
 
 Error Framebuffer::clearBufferuiv(Context *context,
@@ -581,10 +595,15 @@ Error Framebuffer::clearBufferuiv(Context *context,
                                   GLint drawbuffer,
                                   const GLuint *values)
 {
+    if (context->getState().isRasterizerDiscardEnabled())
+    {
+        return gl::Error(GL_NO_ERROR);
+    }
+
     // Sync the clear state
     context->syncRendererState(context->getState().clearStateBitMask());
 
-    return mImpl->clearBufferuiv(context->getState(), buffer, drawbuffer, values);
+    return mImpl->clearBufferuiv(context->getData(), buffer, drawbuffer, values);
 }
 
 Error Framebuffer::clearBufferiv(Context *context,
@@ -592,10 +611,15 @@ Error Framebuffer::clearBufferiv(Context *context,
                                  GLint drawbuffer,
                                  const GLint *values)
 {
+    if (context->getState().isRasterizerDiscardEnabled())
+    {
+        return gl::Error(GL_NO_ERROR);
+    }
+
     // Sync the clear state
     context->syncRendererState(context->getState().clearStateBitMask());
 
-    return mImpl->clearBufferiv(context->getState(), buffer, drawbuffer, values);
+    return mImpl->clearBufferiv(context->getData(), buffer, drawbuffer, values);
 }
 
 Error Framebuffer::clearBufferfi(Context *context,
@@ -604,10 +628,15 @@ Error Framebuffer::clearBufferfi(Context *context,
                                  GLfloat depth,
                                  GLint stencil)
 {
+    if (context->getState().isRasterizerDiscardEnabled())
+    {
+        return gl::Error(GL_NO_ERROR);
+    }
+
     // Sync the clear state
     context->syncRendererState(context->getState().clearStateBitMask());
 
-    return mImpl->clearBufferfi(context->getState(), buffer, drawbuffer, depth, stencil);
+    return mImpl->clearBufferfi(context->getData(), buffer, drawbuffer, depth, stencil);
 }
 
 GLenum Framebuffer::getImplementationColorReadFormat() const

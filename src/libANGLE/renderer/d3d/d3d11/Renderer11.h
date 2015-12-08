@@ -127,11 +127,15 @@ class Renderer11 : public RendererD3D
                             const gl::ColorF &blendColor,
                             unsigned int sampleMask) override;
 
-    virtual gl::Error setDepthStencilState(const gl::DepthStencilState &depthStencilState, int stencilRef,
-                                           int stencilBackRef, bool frontFaceCCW);
+    gl::Error setDepthStencilState(const gl::State &glState) override;
 
     virtual void setScissorRectangle(const gl::Rectangle &scissor, bool enabled);
-    virtual void setViewport(const gl::Rectangle &viewport, float zNear, float zFar, GLenum drawMode, GLenum frontFace,
+    virtual void setViewport(const gl::Caps *caps,
+                             const gl::Rectangle &viewport,
+                             float zNear,
+                             float zFar,
+                             GLenum drawMode,
+                             GLenum frontFace,
                              bool ignoreViewport);
 
     virtual bool applyPrimitiveType(GLenum mode, GLsizei count, bool usesPointSize);
@@ -284,12 +288,12 @@ class Renderer11 : public RendererD3D
     void onSwap();
     void onBufferDelete(const Buffer11 *deleted);
 
+    egl::Error getEGLDevice(DeviceImpl **device) override;
+
   protected:
     void createAnnotator() override;
     gl::Error clearTextures(gl::SamplerType samplerType, size_t rangeStart, size_t rangeEnd) override;
     gl::Error applyShadersImpl(const gl::Data &data, GLenum drawMode) override;
-
-    egl::Error initializeEGLDevice(DeviceD3D **outDevice) override;
 
     void syncState(const gl::State &state, const gl::State::DirtyBits &bitmask) override;
 
@@ -336,9 +340,12 @@ class Renderer11 : public RendererD3D
     HMODULE mDxgiModule;
     std::vector<D3D_FEATURE_LEVEL> mAvailableFeatureLevels;
     D3D_DRIVER_TYPE mDriverType;
+    bool mCreatedWithDeviceEXT;
+    DeviceD3D *mEGLDevice;
 
     HLSLCompiler mCompiler;
 
+    egl::Error initializeD3DDevice();
     void initializeDevice();
     void releaseDeviceResources();
     void release();
@@ -349,16 +356,6 @@ class Renderer11 : public RendererD3D
     uintptr_t mAppliedRTVs[gl::IMPLEMENTATION_MAX_DRAW_BUFFERS];
     uintptr_t mAppliedDSV;
     bool mDepthStencilInitialized;
-    bool mRenderTargetDescInitialized;
-    unsigned int mCurStencilSize;
-
-    struct RenderTargetDesc
-    {
-        size_t width;
-        size_t height;
-        DXGI_FORMAT format;
-    };
-    RenderTargetDesc mRenderTargetDesc;
 
     // Currently applied sampler states
     std::vector<bool> mForceSetVertexSamplerStates;
@@ -412,27 +409,6 @@ class Renderer11 : public RendererD3D
 
     StateManager11 mStateManager;
 
-    // Currently applied rasterizer state
-    bool mForceSetRasterState;
-    gl::RasterizerState mCurRasterState;
-
-    // Currently applied depth stencil state
-    bool mForceSetDepthStencilState;
-    gl::DepthStencilState mCurDepthStencilState;
-    int mCurStencilRef;
-    int mCurStencilBackRef;
-
-    // Currently applied scissor rectangle
-    bool mForceSetScissor;
-    bool mScissorEnabled;
-    gl::Rectangle mCurScissor;
-
-    // Currently applied viewport
-    bool mForceSetViewport;
-    gl::Rectangle mCurViewport;
-    float mCurNear;
-    float mCurFar;
-
     // Currently applied primitive topology
     D3D11_PRIMITIVE_TOPOLOGY mCurrentPrimitiveTopology;
 
@@ -458,7 +434,6 @@ class Renderer11 : public RendererD3D
     uintptr_t mAppliedGeometryShader;
     uintptr_t mAppliedPixelShader;
 
-    dx_VertexConstants mVertexConstants;
     dx_VertexConstants mAppliedVertexConstants;
     ID3D11Buffer *mDriverConstantBufferVS;
     ID3D11Buffer *mCurrentVertexConstantBuffer;
@@ -466,7 +441,6 @@ class Renderer11 : public RendererD3D
     GLintptr mCurrentConstantBufferVSOffset[gl::IMPLEMENTATION_MAX_VERTEX_SHADER_UNIFORM_BUFFERS];
     GLsizeiptr mCurrentConstantBufferVSSize[gl::IMPLEMENTATION_MAX_VERTEX_SHADER_UNIFORM_BUFFERS];
 
-    dx_PixelConstants mPixelConstants;
     dx_PixelConstants mAppliedPixelConstants;
     ID3D11Buffer *mDriverConstantBufferPS;
     ID3D11Buffer *mCurrentPixelConstantBuffer;
