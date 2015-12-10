@@ -85,8 +85,13 @@ HRESULT NativeWindow::createSwapChain(ID3D11Device *device, DXGIFactory *factory
     if (mImpl)
     {
         bool containsAlpha = (mConfig->alphaSize > 0);
-        return mImpl->createSwapChain(device, factory, format, width, height, containsAlpha,
+        HRESULT result = mImpl->createSwapChain(device, factory, format, width, height, containsAlpha,
                                       swapChain);
+		if (SUCCEEDED(result))
+		{
+			factory->MakeWindowAssociation(mWindow, DXGI_MWA_NO_ALT_ENTER);
+		}
+		return result;
     }
 
     return E_UNEXPECTED;

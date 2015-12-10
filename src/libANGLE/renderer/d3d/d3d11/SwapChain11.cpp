@@ -448,10 +448,14 @@ EGLint SwapChain11::reset(int backbufferWidth, int backbufferHeight, EGLint swap
 
     if (mNativeWindow.getNativeWindow())
     {
-        HRESULT result = mNativeWindow.createSwapChain(device, mRenderer->getDxgiFactory(),
+		DXGIFactory *factory = mRenderer->getDxgiFactory();
+        HRESULT result = mNativeWindow.createSwapChain(device, factory,
                                                getSwapChainNativeFormat(),
                                                backbufferWidth, backbufferHeight, &mSwapChain);
-
+		if (SUCCEEDED(result))
+		{
+			factory->MakeWindowAssociation(mNativeWindow.getNativeWindow(), DXGI_MWA_NO_ALT_ENTER);
+		}
         if (FAILED(result))
         {
             ERR("Could not create additional swap chains or offscreen surfaces: %08lX", result);
